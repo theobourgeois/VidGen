@@ -12,7 +12,8 @@
     "dev": "next dev",
     "test": "jest",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "vercel-build": "npm run db:push && npm run build"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.1.0",
