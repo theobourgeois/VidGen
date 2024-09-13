@@ -49,6 +49,9 @@ export const videos = createTable("video", {
 });
 
 export const payments = createTable("payment", {
+  id: varchar("id", { length: 255 }).notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   paymentIntent: varchar("payment_intent", { length: 255 }).notNull(),
 });
 
