@@ -5,6 +5,7 @@ import { eq, desc, and, } from "drizzle-orm";
 import {
   decryptAPIKey,
   generateVideo,
+  generateVideoCloudFn,
   getElevenLabsTextToSpeechData,
   getFfmpegVideoTextFilters,
 } from "~/server/lib/video";
@@ -300,7 +301,7 @@ export const videoRouter = createTRPCRouter({
   generateVideo: protectedProcedure
     .input(
       z.object({
-        text: z.string().min(1).max(6000),
+        text: z.string().min(1).max(5000),
         voiceId: z.string(),
         wordsPerCaption: z.number().int().min(1).max(15),
         fontSize: z.number().int().min(1).max(100),
@@ -405,17 +406,11 @@ export const videoRouter = createTRPCRouter({
           0,
         );
         // const videoLength = 6.316;
-        const video = await generateVideo(
+        const video = await generateVideoCloudFn(
           audioBase64,
           textFilters,
           footageUrl,
           videoLength,
-          async (percentage) => {
-            await ctx.db
-              .update(videos)
-              .set({ progress: percentage })
-              .where(eq(videos.id, videoId));
-          },
         );
 
         if (!video.error) {

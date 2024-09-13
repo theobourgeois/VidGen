@@ -249,6 +249,36 @@ if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR);
 }
 
+export async function generateVideoCloudFn(
+  audioBase64: string,
+  textFilters: string[],
+  baseFootageUrl: string,
+  videoLength: number,
+) {
+  const response = await fetch('https://generate-video-787151393927.us-central1.run.app', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      audioBase64, textFilters, footageUrl: baseFootageUrl, videoLength
+    }),
+  });
+
+  const result = await response.json();
+  if (result.error) {
+    return {
+      error: (result.error ?? "") as string,
+      videoUrl: null,
+    }
+  } else {
+    return {
+      error: null,
+      videoUrl: (result.videoUrl ?? "") as string,
+    }
+  }
+}
+
 export async function generateVideo(
   audioBase64: string,
   textFilters: string[],
@@ -343,3 +373,4 @@ export async function generateVideo(
     });
   });
 }
+
