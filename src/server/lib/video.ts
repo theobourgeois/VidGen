@@ -7,27 +7,26 @@ import CryptoJS from "crypto-js";
 import { execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
 
-
 function getWordWidth(word: string, font: string, fontSize: number) {
   // Create a temporary file to store the output
-  const tempFile = path.join(__dirname, 'temp_output' + uuidv4() + '.txt');
+  const tempFile = path.join(__dirname, "temp_output" + uuidv4() + ".txt");
   const filteredWord = filterTextForFfmpeg(word);
 
   const ffmpegCommand = `ffmpeg -v 24 -hide_banner -f lavfi -i color -vf "drawtext=fontfile='${font}':fontsize=${fontSize}:text='${filteredWord}':x=print(tw\\,24):y=H/2" -vframes 1 -f null - 2> ${tempFile}`;
 
   try {
     // Execute the command
-    execSync(ffmpegCommand, { stdio: 'ignore' });
+    execSync(ffmpegCommand, { stdio: "ignore" });
 
     // Read the output from the temporary file
-    const output = fs.readFileSync(tempFile, 'utf-8');
-    console.log('FFmpeg output:', output);
+    const output = fs.readFileSync(tempFile, "utf-8");
+    console.log("FFmpeg output:", output);
 
     // Parse the width from the output
     const width = parseFloat(output.trim());
 
     if (isNaN(width)) {
-      throw new Error('Failed to parse word width from FFmpeg output');
+      throw new Error("Failed to parse word width from FFmpeg output");
     }
 
     // Clean up the temporary file
@@ -150,9 +149,10 @@ export function getFfmpegVideoTextFilters(
   showBorder: boolean,
 ) {
   const fontFile = fontToFontFile[font];
-  const words =
-    characterStartAndEndTimes.map((character) => character.character).join("")
-      .split(" ");
+  const words = characterStartAndEndTimes
+    .map((character) => character.character)
+    .join("")
+    .split(" ");
 
   const wordStartAndEndTimes: {
     startTime: number;
@@ -162,8 +162,11 @@ export function getFfmpegVideoTextFilters(
 
   let currentCharIndex = 0;
   for (const word of words) {
-    const startTime = characterStartAndEndTimes[currentCharIndex]?.startTime || 0;
-    const endTime = characterStartAndEndTimes[currentCharIndex + word.length - 1]?.endTime || 0;
+    const startTime =
+      characterStartAndEndTimes[currentCharIndex]?.startTime || 0;
+    const endTime =
+      characterStartAndEndTimes[currentCharIndex + word.length - 1]?.endTime ||
+      0;
     wordStartAndEndTimes.push({
       startTime,
       endTime,
@@ -183,14 +186,18 @@ export function getFfmpegVideoTextFilters(
     let currentLineWidth = 0;
 
     for (const wordInfo of selectedWords) {
-      const wordWidth = getWordWidth(wordInfo.word, path.join(BASE_DIR, fontFile), fontSize);
+      const wordWidth = getWordWidth(
+        wordInfo.word,
+        path.join(BASE_DIR, fontFile),
+        fontSize,
+      );
 
       if (currentLineWidth + wordWidth > SCREEN_WIDTH - SCREEN_PADDING) {
         if (currentLine.length > 0) {
           lines.push({
             text: currentLine.join(" "),
             startTime: groupStartTime,
-            endTime: groupEndTime
+            endTime: groupEndTime,
           });
           currentLine = [];
           currentLineWidth = 0;
@@ -205,7 +212,7 @@ export function getFfmpegVideoTextFilters(
       lines.push({
         text: currentLine.join(" "),
         startTime: groupStartTime,
-        endTime: groupEndTime
+        endTime: groupEndTime,
       });
     }
 
@@ -220,7 +227,9 @@ export function getFfmpegVideoTextFilters(
         `fontcolor=${fontColor}:` +
         `fontsize=${fontSize}:` +
         (showBackground ? `box=1:boxcolor=${backgroundColor}@0.8:` : "") +
-        (showBorder ? `borderw=${textBorderSize}:bordercolor=${textBorderColor}:` : "") +
+        (showBorder
+          ? `borderw=${textBorderSize}:bordercolor=${textBorderColor}:`
+          : "") +
         `boxborderw=${10}:` +
         `x=(w-text_w)/2:y=(h-text_h)/2+${heightOffset}:` +
         `enable='between(t, ${line.startTime}, ${line.endTime})'`;
@@ -297,7 +306,10 @@ export async function generateVideo(
 
                 resolve({ error: null, videoUrl });
               } catch (error) {
-                resolve({ error: error.message, videoUrl: null });
+                resolve({
+                  error: (error as any).message,
+                  videoUrl: null,
+                });
               }
             })
             .on("error", async (err) => {
