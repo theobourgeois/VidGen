@@ -2,6 +2,7 @@
   "compilerOptions": {
     /* Base Options: */
     "esModuleInterop": true,
+    "noEmitOnError": false,
     
     "skipLibCheck": true,
     "target": "es2022",

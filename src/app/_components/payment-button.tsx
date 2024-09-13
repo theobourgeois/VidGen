@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { Pack } from "./pack-content";
+import { type Pack } from "./pack-content";
 import { useSession } from "next-auth/react";
 
 export function PaymentButton({
