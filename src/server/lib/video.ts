@@ -242,7 +242,12 @@ export function getFfmpegVideoTextFilters(
   return textFilters;
 }
 
-const TEMP_DIR = path.resolve("tmp");
+const TEMP_DIR = path.resolve("/tmp"); // Use /tmp, as it's commonly writable in serverless environments
+
+// Ensure the directory exists
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR);
+}
 
 export async function generateVideo(
   audioBase64: string,
