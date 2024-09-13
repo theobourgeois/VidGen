@@ -2,33 +2,78 @@ import { env } from "~/env";
 import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
 import path from "path";
+import { Font } from "~/app/create-video/page";
+import CryptoJS from "crypto-js";
+import { execSync } from "child_process";
+import { v4 as uuidv4 } from "uuid";
 
-type CharacterEndTime = {
+
+function getWordWidth(word: string, font: string, fontSize: number) {
+  // Create a temporary file to store the output
+  const tempFile = path.join(__dirname, 'temp_output' + uuidv4() + '.txt');
+  const filteredWord = filterTextForFfmpeg(word);
+
+  const ffmpegCommand = `ffmpeg -v 24 -hide_banner -f lavfi -i color -vf "drawtext=fontfile='${font}':fontsize=${fontSize}:text='${filteredWord}':x=print(tw\\,24):y=H/2" -vframes 1 -f null - 2> ${tempFile}`;
+
+  try {
+    // Execute the command
+    execSync(ffmpegCommand, { stdio: 'ignore' });
+
+    // Read the output from the temporary file
+    const output = fs.readFileSync(tempFile, 'utf-8');
+    console.log('FFmpeg output:', output);
+
+    // Parse the width from the output
+    const width = parseFloat(output.trim());
+
+    if (isNaN(width)) {
+      throw new Error('Failed to parse word width from FFmpeg output');
+    }
+
+    // Clean up the temporary file
+    fs.unlinkSync(tempFile);
+
+    return width;
+  } catch (error) {
+    console.error(`Error executing FFmpeg command with word: ${word}`, error);
+    // Clean up the temporary file in case of error
+    if (fs.existsSync(tempFile)) {
+      fs.unlinkSync(tempFile);
+    }
+    return fontSize * word.length;
+  }
+}
+
+type CharacterStartAndEndTime = {
   character: string;
   endTime: number;
+  startTime: number;
 };
 
 type TransformedElevenLabsApiResponse = {
   audioBase64: string;
-  characterEndTimes: CharacterEndTime[];
+  characterStartAndEndTimes: CharacterStartAndEndTime[];
 };
 
 type ElevenLabsApiResponse = {
   audio_base64: string;
-  character_end_times_seconds: number[];
-  characters: string[];
+  alignment: {
+    character_end_times_seconds: number[];
+    character_start_times_seconds: number[];
+    characters: string[];
+  };
 };
 
-export type Font = keyof typeof fontToFontFile;
-
-const CHARACTERS_PER_LINE = 15;
-const SCREEN_WIDTH = 404;
+const SCREEN_WIDTH = 608;
 const SCREEN_PADDING = 80;
 const ELEVEN_LABS_TEXT_TO_SPEECH_API_URL =
   "https://api.elevenlabs.io/v1/text-to-speech/";
 
-const fontToFontFile = {
+const fontToFontFile: {
+  [key in Font]: string;
+} = {
   helvetica: "Helvetica-Bold.ttf",
+  arial: "Arial.ttf",
 };
 
 export function encryptApiKey(apiKey: string) {
@@ -40,10 +85,13 @@ export function decryptAPIKey(encryptedKey: string) {
   return bytes.toString(CryptoJS.enc.Utf8);
 }
 
-function escapeTextForFfmpeg(text: string) {
+// yeah its bs but it works
+// ffmpeg doesn't like certain characters in text filters so we remove them
+// This is a hack pretty much, but nothing is working so fuck it
+function filterTextForFfmpeg(text: string) {
   return text
     .replaceAll("\\", "\\\\\\\\\\\\\\\\")
-    .replaceAll("'", "\\\\\\'")
+    .replaceAll("'", "")
     .replaceAll("%", "\\\\\\\\\\%")
     .replaceAll(":", "\\\\\\\\\\\\:");
 }
@@ -53,172 +101,156 @@ export async function getElevenLabsTextToSpeechData(
   voiceId: string,
   apiKey: string,
 ): Promise<TransformedElevenLabsApiResponse> {
+  const requestOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "xi-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      text,
+      model_id: "eleven_multilingual_v2",
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+      },
+    }),
+  };
   const response = await fetch(
     ELEVEN_LABS_TEXT_TO_SPEECH_API_URL + `${voiceId}/with-timestamps`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        text,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-        },
-      }),
-    },
+    requestOptions,
   );
 
   const data = (await response.json()) as ElevenLabsApiResponse;
 
-  const characterEndTimes = data.character_end_times_seconds.map(
-    (endTime, index) => {
+  const characterStartAndEndTimes =
+    data?.alignment?.character_end_times_seconds?.map((endTime, index) => {
       return {
-        character: data.characters[index]!,
+        character: data?.alignment.characters[index]!,
+        startTime: data.alignment.character_start_times_seconds[index]!,
         endTime: endTime,
       };
-    },
-  );
+    }) || [];
 
   return {
     audioBase64: data.audio_base64,
-    characterEndTimes,
+    characterStartAndEndTimes,
   };
 }
-
 export function getFfmpegVideoTextFilters(
-  characterEndTimes: CharacterEndTime[],
+  characterStartAndEndTimes: CharacterStartAndEndTime[],
   wordsPerCaption: number,
   fontSize: number,
   fontColor: string,
   font: Font,
   backgroundColor: string,
+  showBackground: boolean,
+  textBorderColor: string,
+  textBorderSize: number,
+  showBorder: boolean,
 ) {
   const fontFile = fontToFontFile[font];
-  const words = escapeTextForFfmpeg(
-    characterEndTimes.map((character) => character.character).join(""),
-  ).split(" ");
-  const wordEndTimes = [];
+  const words =
+    characterStartAndEndTimes.map((character) => character.character).join("")
+      .split(" ");
+
+  const wordStartAndEndTimes: {
+    startTime: number;
+    endTime: number;
+    word: string;
+  }[] = [];
 
   let currentCharIndex = 0;
   for (const word of words) {
-    currentCharIndex += word.length - 1;
-    wordEndTimes.push(characterEndTimes[currentCharIndex]?.endTime);
-    currentCharIndex += 2;
+    const startTime = characterStartAndEndTimes[currentCharIndex]?.startTime || 0;
+    const endTime = characterStartAndEndTimes[currentCharIndex + word.length - 1]?.endTime || 0;
+    wordStartAndEndTimes.push({
+      startTime,
+      endTime,
+      word,
+    });
+    currentCharIndex += word.length + 1; // +1 for the space
   }
 
   const textFilters = [];
-  for (let i = 0; i < wordEndTimes.length; i += wordsPerCaption) {
-    const selectedEndTimes = wordEndTimes.slice(i, i + wordsPerCaption);
-    const selectedWords = words.slice(i, i + wordsPerCaption);
-    const lines: { word: string; endTime: number }[][] = [];
+  for (let i = 0; i < wordStartAndEndTimes.length; i += wordsPerCaption) {
+    const selectedWords = wordStartAndEndTimes.slice(i, i + wordsPerCaption);
+    const groupStartTime = selectedWords[0]?.startTime || 0;
+    const groupEndTime = selectedWords[selectedWords.length - 1]?.endTime || 0;
 
-    let currentPixelWidth = 0;
-    for (let j = 0; j < selectedWords.length; j++) {
-      const word = selectedWords[j]!;
-      const endTime = selectedEndTimes[j]!;
-      if (lines.length === 0) {
-        lines.push([
-          {
-            word,
-            endTime,
-          },
-        ]);
-        continue;
-      }
+    const lines: { text: string; startTime: number; endTime: number }[] = [];
+    let currentLine: string[] = [];
+    let currentLineWidth = 0;
 
-      for (const _ of word) {
-        currentPixelWidth += fontSize;
-        if (currentPixelWidth >= SCREEN_WIDTH - SCREEN_PADDING) {
-          lines.push([
-            {
-              word,
-              endTime,
-            },
-          ]);
-          break;
+    for (const wordInfo of selectedWords) {
+      const wordWidth = getWordWidth(wordInfo.word, path.join(BASE_DIR, fontFile), fontSize);
+
+      if (currentLineWidth + wordWidth > SCREEN_WIDTH - SCREEN_PADDING) {
+        if (currentLine.length > 0) {
+          lines.push({
+            text: currentLine.join(" "),
+            startTime: groupStartTime,
+            endTime: groupEndTime
+          });
+          currentLine = [];
+          currentLineWidth = 0;
         }
       }
 
-      if (
-        currentPixelWidth < SCREEN_WIDTH - SCREEN_PADDING &&
-        lines.length > 0
-      ) {
-        lines[lines.length - 1]?.push({
-          word,
-          endTime,
-        });
-      } else {
-        currentPixelWidth = 0;
-      }
+      currentLine.push(wordInfo.word);
+      currentLineWidth += wordWidth + (currentLine.length > 1 ? fontSize : 0); // Add space width except for first word
+    }
 
+    if (currentLine.length > 0) {
+      lines.push({
+        text: currentLine.join(" "),
+        startTime: groupStartTime,
+        endTime: groupEndTime
+      });
     }
 
     for (let j = 0; j < lines.length; j++) {
       const line = lines[j]!;
-      const joinedWords = line.map((line) => line.word).join(" ");
-      const endTime = lines.at(-1)?.at(-1)?.endTime;
-      let startTime = 0;
-      if (i > 0) {
-        const prevEndTimes = wordEndTimes.slice(i - wordsPerCaption, i);
-        startTime = prevEndTimes[prevEndTimes.length - 1]!;
-      }
+      const heightOffset = fontSize * j + 20;
+      const filteredText = filterTextForFfmpeg(line.text);
 
       const filter =
-        `drawtext=text='${joinedWords}':` +
-        `fontfile=${fontFile}:` +
+        `drawtext=text='${filteredText}':` +
+        `fontfile=${path.join(BASE_DIR, fontFile)}:` +
         `fontcolor=${fontColor}:` +
         `fontsize=${fontSize}:` +
-        `box=1:boxcolor=${backgroundColor}@0.8:` +
-        `x=(w-text_w)/2:y=(h-text_h)/2+${50 + j * 50}:` +
-        `enable='between(t, ${startTime}, ${endTime})'`;
+        (showBackground ? `box=1:boxcolor=${backgroundColor}@0.8:` : "") +
+        (showBorder ? `borderw=${textBorderSize}:bordercolor=${textBorderColor}:` : "") +
+        `boxborderw=${10}:` +
+        `x=(w-text_w)/2:y=(h-text_h)/2+${heightOffset}:` +
+        `enable='between(t, ${line.startTime}, ${line.endTime})'`;
 
       textFilters.push(filter);
     }
   }
+
   return textFilters;
-  //   return `drawtext=text='${escape(
-  //     line
-  // )}':fontfile=${pathToHelveticaBold}:fontcolor=white:fontsize=42:x=(w-text_w)/2:y=(h-text_h)/2+${
-  //     50 + index * 50
-  // }:box=1:boxcolor=black@0.8:enable='between(t,${
-  //     caption.start
-  // },${caption.end})'`;
 }
 
 const BASE_DIR = path.resolve("files");
 
-function isValidFilename(filename: string): boolean {
-  const validFilenameRegex = /^[a-zA-Z0-9_\-\.]+$/;
-  return validFilenameRegex.test(filename);
-}
-
 export async function generateVideo(
   audioBase64: string,
   textFilters: string[],
-  baseFootageFilename: string,
+  baseFootageUrl: string,
   videoLength: number,
+  onProgress: (progress: number) => Promise<void>,
 ): Promise<{ error: string | null; videoUrl: string | null }> {
   return new Promise((resolve) => {
-    if (!isValidFilename(baseFootageFilename)) {
-      resolve({ error: "Invalid filename", videoUrl: null });
-      return;
-    }
-
     const audioBuffer = Buffer.from(audioBase64, "base64");
     const audioPath = path.join(BASE_DIR, "audio.mp3");
     fs.writeFileSync(audioPath, audioBuffer);
-
     const outputPath = path.join(BASE_DIR, "output.mp4");
     const finalOutputPath = path.join(BASE_DIR, "final_output.mp4");
-    const baseFootagePath = path.join(BASE_DIR, baseFootageFilename);
 
-    ffmpeg.ffprobe(baseFootagePath, (err, metadata) => {
+    ffmpeg.ffprobe(baseFootageUrl, (err, metadata) => {
       if (err) {
-        resolve({ error: err as string, videoUrl: null });
+        resolve({ error: err.message, videoUrl: null });
         return;
       }
       const videoDuration = metadata.format.duration;
@@ -226,11 +258,9 @@ export async function generateVideo(
         resolve({ error: "Video duration not found", videoUrl: null });
         return;
       }
-
       const maxStartTime = videoDuration - videoLength;
       const startTime = Math.random() * maxStartTime;
-
-      ffmpeg(baseFootagePath)
+      ffmpeg(baseFootageUrl)
         .setStartTime(startTime)
         .setDuration(videoLength)
         .videoFilters(`crop=ih*9/16:ih,${textFilters.join(",")}`)
@@ -241,19 +271,55 @@ export async function generateVideo(
             .addInput(audioPath)
             .outputOptions("-c:v copy")
             .output(finalOutputPath)
-            .on("end", () => {
-              fs.unlinkSync(audioPath);
-              resolve({ error: null, videoUrl: finalOutputPath });
+            .on("end", async () => {
+              try {
+                await fs.unlink(audioPath, (err) => {
+                  if (err) {
+                    console.error(err);
+                  }
+                });
+                await fs.unlink(outputPath, (err) => {
+                  if (err) {
+                    console.error(err);
+                  }
+                });
+
+                // Read the final video file and convert to base64
+                const videoBuffer = fs.readFileSync(finalOutputPath);
+                const base64Video = videoBuffer.toString("base64");
+                const videoUrl = `data:video/mp4;base64,${base64Video}`;
+
+                await fs.unlink(finalOutputPath, (err) => {
+                  if (err) {
+                    console.error(err);
+                  }
+                });
+
+                resolve({ error: null, videoUrl });
+              } catch (error) {
+                resolve({ error: error.message, videoUrl: null });
+              }
             })
-            .on("error", (err) => {
-              fs.unlinkSync(audioPath);
+            .on("error", async (err) => {
+              await fs.unlink(audioPath, (err) => {
+                if (err) {
+                  console.error(err);
+                }
+              });
               resolve({ error: err.message, videoUrl: null });
             })
             .run();
         })
-        .on("error", (err) => {
-          fs.unlinkSync(audioPath);
+        .on("error", async (err) => {
+          await fs.unlink(audioPath, (err) => {
+            if (err) {
+              console.error(err);
+            }
+          });
           resolve({ error: err.message, videoUrl: null });
+        })
+        .on("progress", async (progress) => {
+          await onProgress(progress.percent || 0);
         })
         .run();
     });

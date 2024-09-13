@@ -15,6 +15,10 @@ import {
   users,
   verificationTokens,
 } from "~/server/db/schema";
+import Credentials from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import bycrypt from "bcrypt";
+import { eq } from "drizzle-orm";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -43,14 +47,33 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  secret: env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: "/auth/signin",
+    newUser: "/auth/signup",
+  },
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    jwt({ token, account, user }) {
+      if (account) {
+        token.accessToken = account.access_token;
+        token.id = user.id;
+        token.name = user.name;
+        console.log({ user });
+      }
+      return token;
+    },
+    session: ({ session, token }) => {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+        },
+      }
+    },
+  },
+  session: {
+    strategy: "jwt",
   },
   adapter: DrizzleAdapter(db, {
     usersTable: users,
@@ -62,6 +85,34 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: env.DISCORD_CLIENT_ID,
       clientSecret: env.DISCORD_CLIENT_SECRET,
+    }),
+    GoogleProvider({
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET
+    }),
+    Credentials({
+      type: "credentials",
+      credentials: {
+        email: { type: "email" },
+        password: { type: "password" },
+      },
+
+      async authorize(credentials, res) {
+        const email = credentials?.email ?? "";
+        const user = (
+          await db.select().from(users).where(eq(users.email, email))
+        )[0]!;
+        if (!user) return null;
+
+        const password = credentials?.password ?? "";
+        const isValid = await bycrypt.compare(
+          password,
+          user?.hashedPassword ?? "",
+        );
+        if (!isValid) return null;
+
+        return user;
+      },
     }),
     /**
      * ...add more providers here.

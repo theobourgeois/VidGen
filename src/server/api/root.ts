@@ -1,5 +1,7 @@
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { videoRouter } from "./routers/video";
+import { userRouter } from "./routers/users";
+import { paymentRouter } from "./routers/payment";
 
 /**
  * This is the primary router for your server.
@@ -7,7 +9,9 @@ import { videoRouter } from "./routers/video";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  video: videoRouter
+  video: videoRouter,
+  user: userRouter,
+  payment: paymentRouter,
 });
 
 // export type definition of API

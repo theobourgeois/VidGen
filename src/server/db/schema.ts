@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  float,
   index,
   int,
   mysqlTableCreator,
@@ -31,6 +32,24 @@ export const users = createTable("user", {
   }).default(sql`CURRENT_TIMESTAMP(3)`),
   image: varchar("image", { length: 255 }),
   encrytedElevenLabsApiKey: text("encrypted_eleven_labs_api_key"),
+  hashedPassword: text("hashed_password"),
+  tokens: int("tokens").notNull().default(1000),
+});
+
+export const videos = createTable("video", {
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull(),
+  progress: float("progress").notNull().default(0),
+  isComplete: int("is_complete").notNull().default(0),
+  step: int("step").notNull().default(0),
+});
+
+export const payments = createTable("payment", {
+  paymentIntent: varchar("payment_intent", { length: 255 }).notNull(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
