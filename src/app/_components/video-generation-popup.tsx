@@ -1,4 +1,3 @@
-import { Progress } from "~/components/ui/progress";
 import {
   Card,
   CardContent,
@@ -6,11 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Loader2, Video, Wand2, Upload } from "lucide-react";
+import { Video, Wand2, Upload } from "lucide-react";
 
 interface VideoGenerationPopupProps {
   isGenerating: boolean;
-  videoProgress: number | null;
   currentStage: number;
 }
 
@@ -22,7 +20,6 @@ const stages = [
 
 export default function VideoGenerationPopup({
   isGenerating,
-  videoProgress,
   currentStage,
 }: VideoGenerationPopupProps) {
   if (!isGenerating) return null;
@@ -36,38 +33,6 @@ export default function VideoGenerationPopup({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex justify-center">
-            <div className="relative h-32 w-32">
-              <svg className="h-full w-full" viewBox="0 0 100 100">
-                <circle
-                  className="stroke-current text-gray-200"
-                  strokeWidth="10"
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="transparent"
-                />
-                <circle
-                  className="progress-ring stroke-current text-red-500"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="transparent"
-                  strokeDasharray="251.2"
-                  strokeDashoffset={251.2 - (videoProgress ?? 0) * 251.2}
-                />
-              </svg>
-              <div className="absolute left-0 top-0 flex h-full w-full items-center justify-center">
-                <Loader2 className="h-16 w-16 animate-spin text-red-600" />
-              </div>
-            </div>
-          </div>
-          <Progress value={(videoProgress ?? 0) * 100} className="w-full" />
-          <p className="text-center text-lg font-semibold">
-            {Math.round((videoProgress ?? 0) * 100)}% Complete
-          </p>
           <div className="space-y-2">
             {stages.map((stage, index) => (
               <div key={index} className="flex items-center space-x-2">
@@ -102,7 +67,7 @@ export default function VideoGenerationPopup({
         </CardContent>
         <CardFooter>
           <p className="w-full text-center text-sm text-gray-500">
-            Hang tight! We &apos re crafting your video with care. This may take
+            Hang tight! We&apos;re crafting your video with care. This may take
             a few minutes.
           </p>
         </CardFooter>

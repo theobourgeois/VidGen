@@ -130,6 +130,9 @@ export default function VideoCreator() {
       onError: (err) => {
         console.error(err);
       },
+      onSuccess: () => {
+        refetchVideoProgress();
+      },
     });
 
   const { mutate: generateVideo } = api.video.generateVideo.useMutation({
@@ -512,7 +515,6 @@ export default function VideoCreator() {
 
       <VideoGenerationPopup
         isGenerating={isGenerating}
-        videoProgress={videoProgressData?.progress ?? 0}
         currentStage={videoProgressData?.step ?? 0}
       />
     </div>

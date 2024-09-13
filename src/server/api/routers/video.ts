@@ -4,6 +4,7 @@ import { users, videos } from "~/server/db/schema";
 import { eq, desc, and, } from "drizzle-orm";
 import {
   decryptAPIKey,
+  fontToFontUrl,
   generateVideo,
   generateVideoCloudFn,
   getElevenLabsTextToSpeechData,
@@ -268,7 +269,6 @@ export const videoRouter = createTRPCRouter({
     }
 
     return {
-      progress: latestVideo.progress,
       step: latestVideo.step,
     }
   }),
@@ -360,7 +360,6 @@ export const videoRouter = createTRPCRouter({
               .values({
                 userId: ctx.session.user.id,
                 createdAt: new Date(),
-                progress: 0,
                 step: 1,
               })
               .$returningId()
@@ -377,7 +376,7 @@ export const videoRouter = createTRPCRouter({
         if (audioBase64 && characterStartAndEndTimes) {
           await ctx.db
             .update(videos)
-            .set({ step: 1 })
+            .set({ step: 2 })
             .where(eq(videos.id, videoId));
         }
 
@@ -386,7 +385,7 @@ export const videoRouter = createTRPCRouter({
         }
         // const audioBase64 = ""
 
-        const textFilters = getFfmpegVideoTextFilters(
+        const textFilters = await getFfmpegVideoTextFilters(
           characterStartAndEndTimes,
           input.wordsPerCaption,
           input.fontSize,
@@ -411,12 +410,13 @@ export const videoRouter = createTRPCRouter({
           textFilters,
           footageUrl,
           videoLength,
+          fontToFontUrl[input.font],
         );
 
         if (!video.error) {
           await ctx.db
             .update(videos)
-            .set({ progress: 1, step: 2 })
+            .set({ progress: 1, step: 3 })
             .where(eq(videos.id, videoId))
         }
 

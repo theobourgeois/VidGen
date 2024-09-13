@@ -7,6 +7,7 @@ import { Font } from "~/app/create-video/page";
 import CryptoJS from "crypto-js";
 import { execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
+import os from "os"
 
 function getWordWidth(word: string, font: string, fontSize: number) {
   // Create a temporary file to store the output
@@ -69,7 +70,7 @@ const SCREEN_PADDING = 80;
 const ELEVEN_LABS_TEXT_TO_SPEECH_API_URL =
   "https://api.elevenlabs.io/v1/text-to-speech/";
 
-const fontToFontFile: {
+export const fontToFontUrl: {
   [key in Font]: string;
 } = {
   helvetica: "https://storage.googleapis.com/vidgen-footage/Helvetica-Bold.ttf",
@@ -137,7 +138,8 @@ export async function getElevenLabsTextToSpeechData(
     characterStartAndEndTimes,
   };
 }
-export function getFfmpegVideoTextFilters(
+
+export async function getFfmpegVideoTextFilters(
   characterStartAndEndTimes: CharacterStartAndEndTime[],
   wordsPerCaption: number,
   fontSize: number,
@@ -149,7 +151,8 @@ export function getFfmpegVideoTextFilters(
   textBorderSize: number,
   showBorder: boolean,
 ) {
-  const fontFile = fontToFontFile[font];
+  const fontUrl = fontToFontUrl[font];
+  const fontFilePath = path.join(TEMP_DIR, fontUrl.split("/").pop() ?? "font.ttf");
   const words = characterStartAndEndTimes
     .map((character) => character.character)
     .join("")
@@ -189,7 +192,7 @@ export function getFfmpegVideoTextFilters(
     for (const wordInfo of selectedWords) {
       const wordWidth = getWordWidth(
         wordInfo.word,
-        path.join(TEMP_DIR, fontFile),
+        path.join(TEMP_DIR, fontUrl),
         fontSize,
       );
 
@@ -224,7 +227,7 @@ export function getFfmpegVideoTextFilters(
 
       const filter =
         `drawtext=text='${filteredText}':` +
-        `fontfile=${fontFile}:` +
+        `fontfile=${fontFilePath}:` +
         `fontcolor=${fontColor}:` +
         `fontsize=${fontSize}:` +
         (showBackground ? `box=1:boxcolor=${backgroundColor}@0.8:` : "") +
@@ -254,6 +257,7 @@ export async function generateVideoCloudFn(
   textFilters: string[],
   baseFootageUrl: string,
   videoLength: number,
+  fontUrl: string,
 ) {
   const response = await fetch('https://generate-video-787151393927.us-central1.run.app', {
     method: 'POST',
@@ -261,7 +265,7 @@ export async function generateVideoCloudFn(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      audioBase64, textFilters, footageUrl: baseFootageUrl, videoLength
+      audioBase64, textFilters, footageUrl: baseFootageUrl, videoLength, fontUrl
     }),
   });
 
