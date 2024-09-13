@@ -13,11 +13,13 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
-import { Download, LoaderIcon, Settings, Wand2 } from "lucide-react";
+import { Download, LoaderIcon, Wand2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import VideoPlayer916, { VideoPlayer916Ref } from "../_components/video-169";
+import VideoPlayer916, {
+  type VideoPlayer916Ref,
+} from "../_components/video-169";
 import { Tooltip, TooltipProvider } from "@radix-ui/react-tooltip";
 import { TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import VideoGenerationPopup from "../_components/video-generation-popup";
@@ -132,10 +134,14 @@ export default function VideoCreator() {
   const { mutate: generateVideo } = api.video.generateVideo.useMutation({
     onSettled: () => {
       router.refresh();
-      refetchVideoProgress().then(() => {
-        setIsGenerating(false);
-        completeVideoGeneration();
-      });
+      refetchVideoProgress()
+        .then(() => {
+          setIsGenerating(false);
+          completeVideoGeneration();
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     },
     onSuccess: (data) => {
       setGeneratedVideoUrl(data.videoUrl);
@@ -164,7 +170,7 @@ export default function VideoCreator() {
   useEffect(() => {
     const formValues = localStorage.getItem("video-creator-form-values");
     if (formValues) {
-      const values = JSON.parse(formValues);
+      const values = JSON.parse(formValues) as VideoCreatorFormValues;
       setFormValues(values);
     }
   }, []);

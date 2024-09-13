@@ -14,7 +14,7 @@ import {
   getPackTitle,
   getPackTokenCount,
   getPackVideoMinutes,
-  Pack,
+  type Pack,
 } from "../_components/pack-content";
 import { db } from "~/server/db";
 import { payments } from "~/server/db/schema";
@@ -79,7 +79,7 @@ function renderErrorPage() {
       </div>
       <h1 className="mb-2 text-3xl font-bold">Oops! Something went wrong</h1>
       <p className="mb-8 text-xl text-gray-600 dark:text-gray-300">
-        We couldn't process your purchase at this time.
+        We couldn &apos t process your purchase at this time.
       </p>
     </main>
   );
@@ -100,7 +100,7 @@ function renderSuccessPage(pack: Pack, totalTokens: number) {
           <CardHeader>
             <CardTitle className="text-2xl">Token Summary</CardTitle>
             <CardDescription>
-              Here's what's been added to your account
+              Here &apos s what &apos s been added to your account
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

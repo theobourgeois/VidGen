@@ -1,16 +1,15 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { users, videos } from "~/server/db/schema";
-import { eq, desc, not, and, gt, gte } from "drizzle-orm";
+import { eq, desc, and, } from "drizzle-orm";
 import {
   decryptAPIKey,
   generateVideo,
   getElevenLabsTextToSpeechData,
   getFfmpegVideoTextFilters,
 } from "~/server/lib/video";
-import { api } from "~/trpc/server";
 import { encode } from "gpt-tokenizer";
-import { BaseFootage, Font } from "~/app/create-video/page";
+import { type BaseFootage, type Font } from "~/app/create-video/page";
 
 const characterEndTimes = [
   { character: 'w', startTime: 4.029, endTime: 4.063 },
@@ -325,7 +324,7 @@ export const videoRouter = createTRPCRouter({
               .select()
               .from(users)
               .where(eq(users.id, ctx.session?.user.id ?? ""))
-          )?.[0]?.tokens || 0;
+          )?.[0]?.tokens ?? 0;
 
         if (userTokens < tokens) {
           throw new Error("Not enough tokens");

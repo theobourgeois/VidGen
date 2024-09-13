@@ -8,9 +8,6 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { getServerAuthSession } from "~/server/auth";
 import UserAvatar from "./_components/user-avatar";
-import { db } from "~/server/db";
-import { users } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
 import { SessionProvider } from "./_components/providers";
 import { api } from "~/trpc/server";
 

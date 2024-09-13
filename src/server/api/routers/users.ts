@@ -55,7 +55,7 @@ export const userRouter = createTRPCRouter({
           .select()
           .from(users)
           .where(eq(users.id, ctx.session?.user.id ?? ""))
-      )?.[0]?.tokens || 0;
+      )?.[0]?.tokens ?? 0;
 
     return userTokens;
   }),

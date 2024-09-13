@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Zap, Wand2, Share2 } from "lucide-react";
 import Image from "next/image";
 import FeaturesSection from "./_components/features";
 

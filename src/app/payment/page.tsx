@@ -6,7 +6,7 @@ import {
 } from "@stripe/react-stripe-js";
 import React, { useEffect, useState } from "react";
 import { useStripe, useElements } from "@stripe/react-stripe-js";
-import { loadStripe, StripeElementsOptions } from "@stripe/stripe-js";
+import { loadStripe, type StripeElementsOptions } from "@stripe/stripe-js";
 import { env } from "~/env";
 import {
   Card,
@@ -16,21 +16,18 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { ArrowLeft, Clock, Zap, Infinity, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { Separator } from "@radix-ui/react-select";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   getPackDescription,
   getPackPrice,
   getPackTitle,
-  getPackTokenCount,
-  Pack,
-  PackContent,
+  type Pack,
   PackFeatures,
 } from "../_components/pack-content";
-import { api } from "~/trpc/react";
 
 export default function Page() {
   const [options, setOptions] = useState<StripeElementsOptions>({});
@@ -194,8 +191,7 @@ function CheckoutForm() {
     // be redirected to an intermediate site first to authorize the payment, then
     // redirected to the `return_url`.
     if (error.type === "card_error" || error.type === "validation_error") {
-      // @ts-ignore
-      setMessage(error.message);
+      setMessage((error as any).message);
     } else {
       setMessage("An unexpected error occured.");
     }

@@ -97,7 +97,7 @@ export const authOptions: NextAuthOptions = {
         password: { type: "password" },
       },
 
-      async authorize(credentials, res) {
+      async authorize(credentials) {
         const email = credentials?.email ?? "";
         const user = (
           await db.select().from(users).where(eq(users.email, email))

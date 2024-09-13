@@ -125,11 +125,11 @@ export async function getElevenLabsTextToSpeechData(
   const characterStartAndEndTimes =
     data?.alignment?.character_end_times_seconds?.map((endTime, index) => {
       return {
-        character: data?.alignment.characters[index]!,
-        startTime: data.alignment.character_start_times_seconds[index]!,
+        character: data?.alignment?.characters[index] ?? "",
+        startTime: data?.alignment?.character_start_times_seconds[index] ?? 0,
         endTime: endTime,
       };
-    }) || [];
+    }) ?? [];
 
   return {
     audioBase64: data.audio_base64,
@@ -163,9 +163,9 @@ export function getFfmpegVideoTextFilters(
   let currentCharIndex = 0;
   for (const word of words) {
     const startTime =
-      characterStartAndEndTimes[currentCharIndex]?.startTime || 0;
+      characterStartAndEndTimes[currentCharIndex]?.startTime ?? 0;
     const endTime =
-      characterStartAndEndTimes[currentCharIndex + word.length - 1]?.endTime ||
+      characterStartAndEndTimes[currentCharIndex + word.length - 1]?.endTime ??
       0;
     wordStartAndEndTimes.push({
       startTime,
@@ -178,8 +178,8 @@ export function getFfmpegVideoTextFilters(
   const textFilters = [];
   for (let i = 0; i < wordStartAndEndTimes.length; i += wordsPerCaption) {
     const selectedWords = wordStartAndEndTimes.slice(i, i + wordsPerCaption);
-    const groupStartTime = selectedWords[0]?.startTime || 0;
-    const groupEndTime = selectedWords[selectedWords.length - 1]?.endTime || 0;
+    const groupStartTime = selectedWords[0]?.startTime ?? 0;
+    const groupEndTime = selectedWords[selectedWords.length - 1]?.endTime ?? 0;
 
     const lines: { text: string; startTime: number; endTime: number }[] = [];
     let currentLine: string[] = [];
@@ -259,7 +259,7 @@ export async function generateVideo(
 
     ffmpeg.ffprobe(baseFootageUrl, (err, metadata) => {
       if (err) {
-        resolve({ error: err.message, videoUrl: null });
+        resolve({ error: (err as any).message, videoUrl: null });
         return;
       }
       const videoDuration = metadata.format.duration;
@@ -282,12 +282,12 @@ export async function generateVideo(
             .output(finalOutputPath)
             .on("end", async () => {
               try {
-                await fs.unlink(audioPath, (err) => {
+                fs.unlink(audioPath, (err) => {
                   if (err) {
                     console.error(err);
                   }
                 });
-                await fs.unlink(outputPath, (err) => {
+                fs.unlink(outputPath, (err) => {
                   if (err) {
                     console.error(err);
                   }
@@ -298,7 +298,7 @@ export async function generateVideo(
                 const base64Video = videoBuffer.toString("base64");
                 const videoUrl = `data:video/mp4;base64,${base64Video}`;
 
-                await fs.unlink(finalOutputPath, (err) => {
+                fs.unlink(finalOutputPath, (err) => {
                   if (err) {
                     console.error(err);
                   }
@@ -313,7 +313,7 @@ export async function generateVideo(
               }
             })
             .on("error", async (err) => {
-              await fs.unlink(audioPath, (err) => {
+              fs.unlink(audioPath, (err) => {
                 if (err) {
                   console.error(err);
                 }
@@ -323,7 +323,7 @@ export async function generateVideo(
             .run();
         })
         .on("error", async (err) => {
-          await fs.unlink(audioPath, (err) => {
+          fs.unlink(audioPath, (err) => {
             if (err) {
               console.error(err);
             }
@@ -331,7 +331,7 @@ export async function generateVideo(
           resolve({ error: err.message, videoUrl: null });
         })
         .on("progress", async (progress) => {
-          await onProgress(progress.percent || 0);
+          await onProgress(progress.percent ?? 0);
         })
         .run();
     });

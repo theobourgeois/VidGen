@@ -15,7 +15,7 @@ export const paymentRouter = createTRPCRouter({
         currency: z.string(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const { amount, currency } = input;
 
       try {
@@ -51,7 +51,7 @@ export const paymentRouter = createTRPCRouter({
             .select()
             .from(users)
             .where(eq(users.id, ctx.session?.user.id ?? ""))
-        )?.[0]?.tokens || 0;
+        )?.[0]?.tokens ?? 0;
 
       const newTokens = userTokens + tokens;
 

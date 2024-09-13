@@ -24,10 +24,14 @@ export default function UserAvatar({ name, email }: UserAvatarProps) {
   const tokensRemaining = api.user.getUserTokens.useQuery().data ?? 0;
 
   const handleLogout = () => {
-    signOut().then(() => {
-      router.push("/auth/signin");
-      router.refresh();
-    });
+    signOut()
+      .then(() => {
+        router.push("/auth/signin");
+        router.refresh();
+      })
+      .catch((error) => {
+        console.error("Error signing out", error);
+      });
   };
 
   const handleClickBuyMoreTokens = () => {

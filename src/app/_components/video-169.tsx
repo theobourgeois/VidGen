@@ -1,13 +1,9 @@
 import React, {
   useState,
   useRef,
-  useEffect,
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Button } from "~/components/ui/button";
-import { Slider } from "~/components/ui/slider";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 
 interface VideoPlayer916Props {
   src: string;

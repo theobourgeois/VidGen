@@ -74,7 +74,7 @@ export default function Page() {
               />
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              <p>Don't have an API key?</p>
+              <p>Don &apos t have an API key?</p>
               <a
                 href="https://www.youtube.com/watch?v=EDsiFLo6mLE"
                 target="_blank"

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Progress } from "~/components/ui/progress";
 import {
   Card,
@@ -106,8 +105,8 @@ export default function VideoGenerationPopup({
         </CardContent>
         <CardFooter>
           <p className="w-full text-center text-sm text-gray-500">
-            Hang tight! We're crafting your video with care. This may take a few
-            minutes.
+            Hang tight! We &apos re crafting your video with care. This may take
+            a few minutes.
           </p>
         </CardFooter>
       </Card>
