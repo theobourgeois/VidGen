@@ -27,7 +27,7 @@ export default async function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
         <TRPCReactProvider>
-          <header className="flex h-14 items-center bg-white px-4 shadow-sm lg:px-6 dark:bg-gray-800">
+          <header className="flex h-14 items-center bg-white px-4 shadow-sm dark:bg-gray-800 lg:px-6">
             <Link className="flex items-center justify-center" href="/">
               <span className="ml-1 text-3xl font-bold text-gray-800 dark:text-white">
                 Vid<span className="text-red-600">Gen</span>
@@ -40,19 +40,19 @@ export default async function RootLayout({
                 </Button>
               </Link>
               <Link
-                className="text-sm font-medium hover:text-red-600 dark:hover:text-red-400"
+                className="hidden text-sm font-medium hover:text-red-600 dark:hover:text-red-400 md:block"
                 href="/#features"
               >
                 Features
               </Link>
               <Link
-                className="text-sm font-medium hover:text-red-600 dark:hover:text-red-400"
+                className="hidden text-sm font-medium hover:text-red-600 dark:hover:text-red-400 sm:block"
                 href="/pricing"
               >
                 Pricing
               </Link>
               <Link
-                className="text-sm font-medium hover:text-red-600 dark:hover:text-red-400"
+                className="hidden text-sm font-medium hover:text-red-600 dark:hover:text-red-400 sm:block"
                 href="/about"
               >
                 About
@@ -76,7 +76,7 @@ export default async function RootLayout({
           </header>
           <SessionProvider>{children}</SessionProvider>
         </TRPCReactProvider>
-        <footer className="flex w-full shrink-0 flex-col items-center gap-2 border-t bg-white px-4 py-6 sm:flex-row md:px-6 dark:bg-gray-800">
+        <footer className="flex w-full shrink-0 flex-col items-center gap-2 border-t bg-white px-4 py-6 dark:bg-gray-800 sm:flex-row md:px-6">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             © {new Date().getFullYear()} VidGen. All rights reserved.
           </p>

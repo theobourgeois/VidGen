@@ -72,8 +72,8 @@ const ELEVEN_LABS_TEXT_TO_SPEECH_API_URL =
 const fontToFontFile: {
   [key in Font]: string;
 } = {
-  helvetica: "Helvetica-Bold.ttf",
-  arial: "Arial.ttf",
+  helvetica: "https://storage.googleapis.com/vidgen-footage/Helvetica-Bold.ttf",
+  arial: "https://storage.googleapis.com/vidgen-footage/ArialCEMTBlack.ttf",
 };
 
 export function encryptApiKey(apiKey: string) {
@@ -224,7 +224,7 @@ export function getFfmpegVideoTextFilters(
 
       const filter =
         `drawtext=text='${filteredText}':` +
-        `fontfile=${path.join(TEMP_DIR, fontFile)}:` +
+        `fontfile=${fontFile}:` +
         `fontcolor=${fontColor}:` +
         `fontsize=${fontSize}:` +
         (showBackground ? `box=1:boxcolor=${backgroundColor}@0.8:` : "") +
