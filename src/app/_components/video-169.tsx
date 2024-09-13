@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import React, { useRef, forwardRef, useImperativeHandle } from "react";
 
 interface VideoPlayer916Props {
   src: string;

@@ -1,5 +1,5 @@
 import * as React from "react";
-// @ts-nocheck
+/* eslint-disable */
 
 import { cn } from "~/lib/utils";
 
