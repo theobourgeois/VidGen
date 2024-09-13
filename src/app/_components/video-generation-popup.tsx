@@ -27,9 +27,6 @@ export default function VideoGenerationPopup({
 }: VideoGenerationPopupProps) {
   if (!isGenerating) return null;
 
-  console.log("videoProgress", videoProgress);
-  console.log("currentStage", currentStage);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
       <Card className="w-full max-w-md">

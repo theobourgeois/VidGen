@@ -57,7 +57,6 @@ export default async function Page({
         tokens: getPackTokenCount(pack),
         paymentIntent: searchParams.payment_intent,
       });
-      console.log("Added tokens to account");
       revalidatePath("/");
     }
 

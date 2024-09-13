@@ -189,7 +189,7 @@ export function getFfmpegVideoTextFilters(
     for (const wordInfo of selectedWords) {
       const wordWidth = getWordWidth(
         wordInfo.word,
-        path.join(BASE_DIR, fontFile),
+        path.join(TEMP_DIR, fontFile),
         fontSize,
       );
 
@@ -224,7 +224,7 @@ export function getFfmpegVideoTextFilters(
 
       const filter =
         `drawtext=text='${filteredText}':` +
-        `fontfile=${path.join(BASE_DIR, fontFile)}:` +
+        `fontfile=${path.join(TEMP_DIR, fontFile)}:` +
         `fontcolor=${fontColor}:` +
         `fontsize=${fontSize}:` +
         (showBackground ? `box=1:boxcolor=${backgroundColor}@0.8:` : "") +
@@ -242,7 +242,7 @@ export function getFfmpegVideoTextFilters(
   return textFilters;
 }
 
-const BASE_DIR = path.resolve("files");
+const TEMP_DIR = path.resolve("tmp");
 
 export async function generateVideo(
   audioBase64: string,
@@ -253,10 +253,10 @@ export async function generateVideo(
 ): Promise<{ error: string | null; videoUrl: string | null }> {
   return new Promise((resolve) => {
     const audioBuffer = Buffer.from(audioBase64, "base64");
-    const audioPath = path.join(BASE_DIR, "audio.mp3");
+    const audioPath = path.join(TEMP_DIR, "audio.mp3");
     fs.writeFileSync(audioPath, audioBuffer);
-    const outputPath = path.join(BASE_DIR, "output.mp4");
-    const finalOutputPath = path.join(BASE_DIR, "final_output.mp4");
+    const outputPath = path.join(TEMP_DIR, "output.mp4");
+    const finalOutputPath = path.join(TEMP_DIR, "final_output.mp4");
 
     ffmpeg.ffprobe(baseFootageUrl, (err, metadata) => {
       if (err) {
