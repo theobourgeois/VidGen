@@ -1,6 +1,4 @@
 "use client";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { SignInProviders } from "~/app/_components/signin-providers";
 
 export default function SignInPage() {

@@ -16,11 +16,6 @@ export interface VideoPlayer916Ref {
 
 const VideoPlayer916 = forwardRef<VideoPlayer916Ref, VideoPlayer916Props>(
   ({ src, poster }, ref) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [volume, setVolume] = useState(1);
-    const [isMuted, setIsMuted] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useImperativeHandle(ref, () => ({

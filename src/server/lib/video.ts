@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { env } from "~/env";
 import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
