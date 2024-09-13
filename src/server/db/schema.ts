@@ -49,10 +49,7 @@ export const videos = createTable("video", {
 });
 
 export const payments = createTable("payment", {
-  id: varchar("id", { length: 255 }).notNull()
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  paymentIntent: varchar("payment_intent", { length: 255 }).notNull(),
+  paymentIntent: varchar("payment_intent", { length: 255 }).primaryKey().notNull(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -63,9 +60,6 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const accounts = createTable(
   "account",
   {
-    id: varchar("id", { length: 255 }).notNull()
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id),
@@ -99,9 +93,6 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 export const sessions = createTable(
   "session",
   {
-    id: varchar("id", { length: 255 }).notNull()
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
     sessionToken: varchar("session_token", { length: 255 })
       .notNull()
       .primaryKey(),
@@ -122,9 +113,6 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 export const verificationTokens = createTable(
   "verification_token",
   {
-    id: varchar("id", { length: 255 }).notNull()
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
     identifier: varchar("identifier", { length: 255 }).notNull(),
     token: varchar("token", { length: 255 }).notNull(),
     expires: timestamp("expires", { mode: "date" }).notNull(),
