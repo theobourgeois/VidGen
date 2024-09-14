@@ -408,6 +408,11 @@ export const videoRouter = createTRPCRouter({
           fontToFontUrl[input.font],
         );
 
+
+        if (video.error) {
+          console.error("Google Cloud Error:", video.error);
+        }
+
         if (video.videoUrl) {
           await ctx.db
             .update(videos)
