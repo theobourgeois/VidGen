@@ -408,27 +408,28 @@ export const videoRouter = createTRPCRouter({
           fontToFontUrl[input.font],
         );
 
-        if (!video.error) {
+        if (video.videoUrl) {
           await ctx.db
             .update(videos)
             .set({ progress: 1, step: 3 })
             .where(eq(videos.id, videoId))
+
+          await ctx.db
+            .update(users)
+            .set({
+              tokens: newTokens,
+            })
+            .where(eq(users.id, ctx.session.user.id));
+
+          return {
+            videoUrl: video.videoUrl,
+          };
         }
 
         if (video.error) {
           throw new Error(video.error);
         }
 
-        await ctx.db
-          .update(users)
-          .set({
-            tokens: newTokens,
-          })
-          .where(eq(users.id, ctx.session.user.id));
-
-        return {
-          videoUrl: video.videoUrl,
-        };
       } catch (error) {
         console.error(error)
         throw new Error("Failed to generate video: " + `${error as string}`);
