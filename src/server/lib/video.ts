@@ -7,7 +7,6 @@ import { Font } from "~/app/create-video/page";
 import CryptoJS from "crypto-js";
 import { execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
-import os from "os"
 
 function getWordWidth(word: string, font: string, fontSize: number) {
   // Create a temporary file to store the output
@@ -75,6 +74,13 @@ export const fontToFontUrl: {
 } = {
   helvetica: "https://storage.googleapis.com/vidgen-footage/Helvetica-Bold.ttf",
   arial: "https://storage.googleapis.com/vidgen-footage/ArialCEMTBlack.ttf",
+};
+
+const fontToSizeMultiplier: {
+  [key in Font]: number;
+} = {
+  helvetica: (9 / 12),
+  arial: (10 / 12)
 };
 
 export function encryptApiKey(apiKey: string) {
@@ -190,11 +196,7 @@ export async function getFfmpegVideoTextFilters(
     let currentLineWidth = 0;
 
     for (const wordInfo of selectedWords) {
-      const wordWidth = getWordWidth(
-        wordInfo.word,
-        path.join(TEMP_DIR, fontUrl),
-        fontSize,
-      );
+      const wordWidth = (fontSize * fontToSizeMultiplier[font] ?? 1) * wordInfo.word.length
 
       if (currentLineWidth + wordWidth > SCREEN_WIDTH - SCREEN_PADDING) {
         if (currentLine.length > 0) {
