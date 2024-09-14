@@ -28,7 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Checkbox } from "~/components/ui/checkbox";
 import Link from "next/link";
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const baseFootageOptions = [
   { value: "minecraft", label: "Minecraft" },
