@@ -333,12 +333,7 @@ export const videoRouter = createTRPCRouter({
 
         // Deduct tokens from user
         const newTokens = userTokens - tokens;
-        await ctx.db
-          .update(users)
-          .set({
-            tokens: newTokens,
-          })
-          .where(eq(users.id, ctx.session.user.id));
+
 
         const encryptedKey = (
           await ctx.db
@@ -423,6 +418,13 @@ export const videoRouter = createTRPCRouter({
         if (video.error) {
           throw new Error(video.error);
         }
+
+        await ctx.db
+          .update(users)
+          .set({
+            tokens: newTokens,
+          })
+          .where(eq(users.id, ctx.session.user.id));
 
         return {
           videoUrl: video.videoUrl,
