@@ -168,7 +168,7 @@ export default function VideoCreator() {
 
   const { data: videoProgressData, refetch: refetchVideoProgress } =
     api.video.getVideoProgress.useQuery(undefined, {
-      refetchInterval: isGenerating ? 500 : 0,
+      refetchInterval: isGenerating ? 500 : undefined,
     });
 
   useEffect(() => {
@@ -357,6 +357,18 @@ export default function VideoCreator() {
                     </div>
                   </div>
                   <div>
+                    <Label htmlFor="showBackground">Show Background Box</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="showBackground"
+                        checked={showBackground}
+                        onCheckedChange={handleChangeFormValues(
+                          "showBackground",
+                        )}
+                      ></Checkbox>
+                    </div>
+                  </div>
+                  <div>
                     <Label htmlFor="backgroundColor">Background Color</Label>
                     <div className="flex items-center space-x-2">
                       <Input
@@ -377,18 +389,15 @@ export default function VideoCreator() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="showBackground">Show Background Box</Label>
+                    <Label htmlFor="showBorder">Show Text Border</Label>
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="showBackground"
-                        checked={showBackground}
-                        onCheckedChange={handleChangeFormValues(
-                          "showBackground",
-                        )}
+                        id="showBorder"
+                        checked={showBorder}
+                        onCheckedChange={handleChangeFormValues("showBorder")}
                       ></Checkbox>
                     </div>
                   </div>
-
                   <div>
                     <Label htmlFor="textBorderColor">Text Border Color</Label>
                     <div className="flex items-center space-x-2">
@@ -420,16 +429,6 @@ export default function VideoCreator() {
                         onChange={handleChangeFormValues("textBorderSize")}
                         className="flex-grow"
                       />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="showBorder">Show Text Border</Label>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="showBorder"
-                        checked={showBorder}
-                        onCheckedChange={handleChangeFormValues("showBorder")}
-                      ></Checkbox>
                     </div>
                   </div>
                 </TabsContent>
