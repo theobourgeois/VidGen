@@ -81,7 +81,7 @@ export default async function RootLayout({
             © {new Date().getFullYear()} VidGen. All rights reserved.
           </p>
           <nav className="flex gap-4 sm:ml-auto sm:gap-6">
-            <Link
+            {/* <Link
               className="text-xs text-gray-500 underline-offset-4 hover:text-red-600 hover:underline dark:text-gray-400 dark:hover:text-red-400"
               href="#"
             >
@@ -92,7 +92,7 @@ export default async function RootLayout({
               href="#"
             >
               Privacy
-            </Link>
+            </Link> */}
           </nav>
         </footer>
       </body>

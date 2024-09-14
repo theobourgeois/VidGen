@@ -79,7 +79,7 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="w-full max-w-sm space-y-2">
-                <Link href="/auth/signup">
+                <Link href="/auth/signin">
                   <Button
                     type="submit"
                     className="bg-white text-red-600 hover:bg-gray-100"
@@ -87,7 +87,7 @@ export default function LandingPage() {
                     Sign Up
                   </Button>
                 </Link>
-                <p className="text-xs text-gray-200">
+                {/* <p className="text-xs text-gray-200">
                   By signing up, you agree to our{" "}
                   <Link
                     className="underline underline-offset-2 hover:text-gray-100"
@@ -95,7 +95,7 @@ export default function LandingPage() {
                   >
                     Terms & Conditions
                   </Link>
-                </p>
+                </p> */}
               </div>
             </div>
           </div>
