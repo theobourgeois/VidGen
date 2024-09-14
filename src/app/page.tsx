@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import Image from "next/image";
 import FeaturesSection from "./_components/features";
+import VideoPlayer916 from "./_components/video-169";
+import { cn } from "~/lib/utils";
 
 export default function LandingPage() {
   return (
@@ -35,24 +37,33 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-        <section className="flex w-full justify-center bg-white py-12 md:py-24 dark:bg-gray-800">
+        <section className="flex w-full justify-center bg-gradient-to-b from-white to-gray-200 py-12 dark:bg-gray-800 md:py-24">
           <div className="container px-4 md:px-6">
-            <h2 className="mb-12 text-center text-3xl font-bold tracking-tighter text-gray-800 sm:text-5xl dark:text-white">
-              Featured Videos
-            </h2>
+            <div className="mb-12 flex flex-col gap-1">
+              <h2 className="text-center text-3xl font-bold tracking-tighter text-gray-800 dark:text-white sm:text-5xl">
+                Featured Videos
+              </h2>
+              <p className="text-center">
+                A sample of what&apos;s possible with VidGen.
+              </p>
+            </div>
             <div className="flex justify-center space-x-4 md:space-x-8">
               {[1, 2, 3].map((index) => (
                 <div
                   key={index}
-                  className="relative h-96 w-56 overflow-hidden rounded-lg bg-gray-200 shadow-lg"
+                  className={cn(
+                    "shadow-2xl, relative h-96 w-56 overflow-hidden rounded-lg shadow-2xl shadow-red-600",
+                  )}
                 >
-                  <Image
-                    src={`/placeholder.svg?height=384&width=216`}
-                    alt={`Featured video ${index}`}
-                    layout="fill"
-                    objectFit="cover"
-                    className="rounded-lg"
-                  />
+                  <div className="relative mx-auto w-full max-w-sm overflow-hidden rounded-lg bg-black shadow-lg">
+                    <div className="aspect-[9/16]">
+                      <video
+                        src={`/vid${index}.mp4`}
+                        className="h-full w-full object-cover"
+                        controls
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -60,7 +71,7 @@ export default function LandingPage() {
         </section>
         <section
           id="features"
-          className="flex w-full justify-center bg-gray-50 py-12 md:py-24 lg:py-32 dark:bg-gray-900"
+          className="flex w-full justify-center bg-gray-50 py-12 dark:bg-gray-900 md:py-24 lg:py-32"
         >
           <FeaturesSection></FeaturesSection>
         </section>
@@ -72,7 +83,7 @@ export default function LandingPage() {
                   Start Creating Today
                 </h2>
                 <p className="max-w-[600px] text-gray-200 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Join thousands of content creators who trust VidGen for their
+                  Join the many content creators who trust VidGen for their
                   short-form video needs.
                 </p>
               </div>

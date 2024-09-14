@@ -94,7 +94,7 @@ export default function VideoCreator() {
   const [formValues, setFormValues] = useState<VideoCreatorFormValues>({
     text: "",
     voice: voiceOptions[0]!.value,
-    wordsPerCaption: 5,
+    wordsPerCaption: 1,
     fontSize: 60,
     font: "helvetica",
     fontColor: "#FFFFFF",

@@ -37,7 +37,7 @@ export function SignInProviders() {
       </div> */}
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {(Object.keys(data ?? {}) as BuiltInProviderType[]).map(
             (provider) =>
               provider !== "credentials" && (
@@ -80,7 +80,7 @@ export function ProviderSigninButton({
       color={color}
       onClick={() => handleSignIn(provider)}
     >
-      {icon} Sign in with {provider}
+      {icon} Continue with {provider}
     </Button>
   );
 }
