@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import Image from "next/image";
 import FeaturesSection from "./_components/features";
-import VideoPlayer916 from "./_components/video-169";
-import { cn } from "~/lib/utils";
 
 export default function LandingPage() {
   return (
@@ -47,23 +44,17 @@ export default function LandingPage() {
                 A sample of what&apos;s possible with VidGen.
               </p>
             </div>
-            <div className="flex justify-center space-x-4 md:space-x-8">
+            <div className="flex flex-wrap justify-center gap-8">
               {[1, 2, 3].map((index) => (
                 <div
                   key={index}
-                  className={cn(
-                    "shadow-2xl, relative h-96 w-56 overflow-hidden rounded-lg shadow-2xl shadow-red-600",
-                  )}
+                  className="relative h-96 w-56 overflow-hidden rounded-lg shadow-2xl shadow-red-600"
                 >
-                  <div className="relative mx-auto w-full max-w-sm overflow-hidden rounded-lg bg-black shadow-lg">
-                    <div className="aspect-[9/16]">
-                      <video
-                        src={`/vid${index}.mp4`}
-                        className="h-full w-full object-cover"
-                        controls
-                      />
-                    </div>
-                  </div>
+                  <video
+                    src={`/vid${index}.mp4`}
+                    className="h-full w-full object-cover"
+                    controls
+                  />
                 </div>
               ))}
             </div>
