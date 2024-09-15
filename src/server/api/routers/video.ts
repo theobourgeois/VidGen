@@ -421,6 +421,7 @@ export const videoRouter = createTRPCRouter({
         ).then((video) => {
           const fileName = uuidv4() + ".mp4";
           const fileUrl = `https://storage.googleapis.com/${GC_VIDEO_BUCKET_NAME}/${fileName}`;
+          console.log({ fileUrl })
           ctx.db
             .update(videos)
             .set({ step: 3, url: fileUrl })
