@@ -291,7 +291,7 @@ export async function generateVideoCloudFn(
   videoLength: number,
   fontUrl: string,
 ) {
-  const response = await fetch('https://generate-video-787151393927.us-central1.run.app', {
+  const response = await fetch('https://generate-vid-787151393927.us-central1.run.app', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

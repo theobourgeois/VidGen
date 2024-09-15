@@ -121,9 +121,6 @@ export default function VideoCreator() {
     textBorderSize,
   } = formValues;
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
-    null,
-  );
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { mutate: completeVideoGeneration } =
@@ -132,24 +129,25 @@ export default function VideoCreator() {
         console.error(err);
       },
       onSuccess: () => {
-        refetchVideoProgress();
+        refetchVideoData();
+        refetchVideoUrl();
       },
     });
 
   const { mutate: generateVideo } = api.video.generateVideo.useMutation({
     onSettled: () => {
       router.refresh();
-      refetchVideoProgress()
+      refetchVideoData()
         .then(() => {
           setIsGenerating(false);
+          refetchVideoUrl();
           completeVideoGeneration();
         })
         .catch((err) => {
           console.error(err);
         });
     },
-    onSuccess: (data) => {
-      setGeneratedVideoUrl(data.videoUrl);
+    onSuccess: () => {
       setError(null);
     },
     onError: (err) => {
@@ -167,10 +165,13 @@ export default function VideoCreator() {
     },
   });
 
-  const { data: videoProgressData, refetch: refetchVideoProgress } =
-    api.video.getVideoProgress.useQuery(undefined, {
+  const { data: videoData, refetch: refetchVideoData } =
+    api.video.getLatestVideoProgress.useQuery(undefined, {
       refetchInterval: isGenerating ? 500 : undefined,
     });
+
+  const { data: videoUrl, refetch: refetchVideoUrl } =
+    api.video.getLatestVideo.useQuery();
 
   useEffect(() => {
     const formValues = localStorage.getItem("video-creator-form-values");
@@ -443,7 +444,7 @@ export default function VideoCreator() {
             </CardHeader>
             <CardContent>
               <div className="flex w-full justify-center">
-                <VideoPlayer916 ref={videoRef} src={generatedVideoUrl ?? ""} />
+                <VideoPlayer916 ref={videoRef} src={videoUrl ?? ""} />
               </div>
               <div className="mt-4 flex justify-center space-x-4">
                 <TooltipProvider>
@@ -453,7 +454,7 @@ export default function VideoCreator() {
                         variant="outline"
                         size="icon"
                         onClick={handleDownloadVideo}
-                        disabled={!generatedVideoUrl}
+                        disabled={!videoUrl}
                       >
                         <Download className="h-4 w-4" />
                         <span className="sr-only">Download video</span>
@@ -515,7 +516,7 @@ export default function VideoCreator() {
 
       <VideoGenerationPopup
         isGenerating={isGenerating}
-        currentStage={videoProgressData?.step ?? 0}
+        currentStage={videoData?.step ?? 0}
       />
     </div>
   );
