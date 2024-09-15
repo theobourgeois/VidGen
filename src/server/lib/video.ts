@@ -15,7 +15,7 @@ const storage = new Storage({
   projectId: env.GC_PROJECT_ID,
   credentials: {
     client_email: env.GC_EMAIL,
-    private_key: env.GC_PRIVATE_KEY,
+    private_key: env.GC_PRIVATE_KEY.split(String.raw`\n`).join('\n'),
   }
 });
 

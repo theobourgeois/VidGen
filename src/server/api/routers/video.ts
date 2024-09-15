@@ -6,7 +6,6 @@ import {
   decryptAPIKey,
   fontToFontUrl,
   GC_VIDEO_BUCKET_NAME,
-  generateVideo,
   generateVideoCloudFn,
   getElevenLabsTextToSpeechData,
   getFfmpegVideoTextFilters,
