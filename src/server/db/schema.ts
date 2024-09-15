@@ -43,9 +43,9 @@ export const videos = createTable("video", {
     .$defaultFn(() => crypto.randomUUID()),
   userId: varchar("user_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull(),
-  progress: float("progress").notNull().default(0),
   isComplete: int("is_complete").notNull().default(0),
   step: int("step").notNull().default(0),
+  url: text("url"),
 });
 
 export const payments = createTable("payment", {

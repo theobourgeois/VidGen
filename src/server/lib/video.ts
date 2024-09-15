@@ -7,6 +7,36 @@ import { Font } from "~/app/create-video/page";
 import CryptoJS from "crypto-js";
 import { execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
+import { Storage } from '@google-cloud/storage';
+
+export const GC_VIDEO_BUCKET_NAME = "vidgen-videos"
+
+const storage = new Storage({
+  projectId: env.GC_PROJECT_ID,
+  credentials: {
+    client_email: env.GC_EMAIL,
+    private_key: env.GC_PRIVATE_KEY,
+  }
+});
+
+export async function uploadFileToGCS(base64Data: string, fileName: string) {
+  const base64Content = base64Data.split(',')[1]; // This removes the data URI prefix
+  if (!base64Content) {
+    throw new Error('Base64 content not found');
+  }
+  const buffer = Buffer.from(base64Content, 'base64');
+
+  console.log('Buffer created. Size:', buffer.length);
+
+  // Create a reference to the file in the bucket
+  const file = storage.bucket(GC_VIDEO_BUCKET_NAME).file(fileName);
+
+  // Upload the buffer
+  await file.save(buffer, {
+    contentType: 'video/mp4', // Adjust contentType as needed
+  });
+
+}
 
 function getWordWidth(word: string, font: string, fontSize: number) {
   // Create a temporary file to store the output

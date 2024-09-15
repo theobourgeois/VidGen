@@ -5,13 +5,16 @@ import { eq, desc, and, } from "drizzle-orm";
 import {
   decryptAPIKey,
   fontToFontUrl,
+  GC_VIDEO_BUCKET_NAME,
   generateVideo,
   generateVideoCloudFn,
   getElevenLabsTextToSpeechData,
   getFfmpegVideoTextFilters,
+  uploadFileToGCS,
 } from "~/server/lib/video";
 import { encode } from "gpt-tokenizer";
 import { type BaseFootage, type Font } from "~/app/create-video/page";
+import { v4 as uuidv4 } from "uuid";
 
 const characterEndTimes = [
   { character: 'w', startTime: 4.029, endTime: 4.063 },
@@ -408,15 +411,19 @@ export const videoRouter = createTRPCRouter({
           fontToFontUrl[input.font],
         );
 
-
         if (video.error) {
           console.error("Google Cloud Error:", video.error);
         }
 
         if (video.videoUrl) {
+          console.log(video.videoUrl.slice(0, 100), "..." + video.videoUrl.slice(-100));
+          const fileName = uuidv4() + ".mp4";
+          const fileUrl = `https://storage.googleapis.com/${GC_VIDEO_BUCKET_NAME}/${fileName}`;
+
+          await uploadFileToGCS(video.videoUrl, fileName);
           await ctx.db
             .update(videos)
-            .set({ progress: 1, step: 3 })
+            .set({ step: 3, url: fileUrl })
             .where(eq(videos.id, videoId))
 
           await ctx.db
@@ -427,7 +434,7 @@ export const videoRouter = createTRPCRouter({
             .where(eq(users.id, ctx.session.user.id));
 
           return {
-            videoUrl: video.videoUrl,
+            videoUrl: fileUrl,
           };
         }
 
