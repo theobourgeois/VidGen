@@ -5,15 +5,12 @@ import { eq, desc, and } from "drizzle-orm";
 import {
   decryptAPIKey,
   fontToFontUrl,
-  GC_VIDEO_BUCKET_NAME,
-  generateVideoCloudFn,
+  generateVideo,
   getElevenLabsTextToSpeechData,
   getFfmpegVideoTextFilters,
-  uploadFileToGCS,
 } from "~/server/lib/video";
 import { encode } from "gpt-tokenizer";
 import { type BaseFootage, type Font } from "~/app/create-video/page";
-import { v4 as uuidv4 } from "uuid";
 
 const characterEndTimes = [
   { character: "w", startTime: 4.029, endTime: 4.063 },
@@ -329,126 +326,100 @@ export const videoRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const tokens = encode(input.text).length;
+      const tokens = encode(input.text).length;
 
-        const userTokens =
-          (
-            await ctx.db
-              .select()
-              .from(users)
-              .where(eq(users.id, ctx.session?.user.id ?? ""))
-          )?.[0]?.tokens ?? 0;
-
-        if (userTokens < tokens) {
-          throw new Error("Not enough tokens");
-        }
-
-        // Deduct tokens from user
-        const newTokens = userTokens - tokens;
-
-        const encryptedKey = (
+      const userTokens =
+        (
           await ctx.db
-            .select({
-              apiKey: users.encrytedElevenLabsApiKey,
-            })
+            .select()
             .from(users)
-            .where(eq(users.id, ctx.session.user.id))
-        )[0]?.apiKey;
+            .where(eq(users.id, ctx.session?.user.id ?? ""))
+        )?.[0]?.tokens ?? 0;
 
-        if (!encryptedKey) {
-          throw new Error("No API key found");
-        }
-
-        const videoId =
-          (
-            await ctx.db
-              .insert(videos)
-              .values({
-                userId: ctx.session.user.id,
-                createdAt: new Date(),
-                step: 1,
-              })
-              .$returningId()
-          )[0]?.id ?? "";
-
-        const apiKey = decryptAPIKey(encryptedKey);
-        const { audioBase64, characterStartAndEndTimes } =
-          await getElevenLabsTextToSpeechData(
-            input.text,
-            input.voiceId,
-            apiKey,
-          );
-
-        if (audioBase64 && characterStartAndEndTimes) {
-          await ctx.db
-            .update(videos)
-            .set({ step: 2 })
-            .where(eq(videos.id, videoId));
-        }
-
-        for (const character of characterEndTimes) {
-          console.log(character);
-        }
-        // const audioBase64 = ""
-
-        const textFilters = await getFfmpegVideoTextFilters(
-          characterStartAndEndTimes,
-          input.wordsPerCaption,
-          input.fontSize,
-          input.fontColor,
-          input.font,
-          input.backgroundColor,
-          input.showBackground,
-          input.textBorderColor,
-          input.textBorderSize,
-          input.showBorder,
-        );
-        console.log("Text filters processed:", textFilters);
-
-        const footageUrl = baseFootageToUrl[input.baseFootage];
-        const videoLength = characterStartAndEndTimes.reduce(
-          (acc, { endTime }) => Math.max(acc, endTime),
-          0,
-        );
-        // const videoLength = 6.316;
-        return generateVideoCloudFn(
-          audioBase64,
-          textFilters,
-          footageUrl,
-          videoLength,
-          fontToFontUrl[input.font],
-        ).then((video) => {
-          const fileName = uuidv4() + ".mp4";
-          const fileUrl = `https://storage.googleapis.com/${GC_VIDEO_BUCKET_NAME}/${fileName}`;
-          console.log({ fileUrl })
-          ctx.db
-            .update(videos)
-            .set({ step: 3, url: fileUrl })
-            .where(eq(videos.id, videoId))
-            .catch((error) => {
-              console.error(error);
-            });
-
-          if (video.videoUrl) {
-            uploadFileToGCS(video.videoUrl, fileName).catch((error) =>
-              console.error(error),
-            );
-
-            ctx.db
-              .update(users)
-              .set({
-                tokens: newTokens,
-              })
-              .where(eq(users.id, ctx.session.user.id));
-          }
-          if (video.error) {
-            throw new Error(video.error);
-          }
-        });
-      } catch (error) {
-        console.error(error);
-        throw new Error("Failed to generate video: " + `${error as string}`);
+      if (userTokens < tokens) {
+        throw new Error("Not enough tokens");
       }
+
+      const encryptedKey = (
+        await ctx.db
+          .select({
+            apiKey: users.encrytedElevenLabsApiKey,
+          })
+          .from(users)
+          .where(eq(users.id, ctx.session.user.id))
+      )[0]?.apiKey;
+
+      if (!encryptedKey) {
+        throw new Error("No API key found");
+      }
+
+      const videoId =
+        (
+          await ctx.db
+            .insert(videos)
+            .values({
+              userId: ctx.session.user.id,
+              createdAt: new Date(),
+              step: 1,
+            })
+            .$returningId()
+        )[0]?.id ?? "";
+
+      const apiKey = decryptAPIKey(encryptedKey);
+      const { audioBase64, characterStartAndEndTimes } =
+        await getElevenLabsTextToSpeechData(input.text, input.voiceId, apiKey);
+
+      if (audioBase64 && characterStartAndEndTimes) {
+        await ctx.db
+          .update(videos)
+          .set({ step: 2 })
+          .where(eq(videos.id, videoId));
+      }
+
+      for (const character of characterEndTimes) {
+        console.log(character);
+      }
+
+      const textFilters = await getFfmpegVideoTextFilters(
+        characterStartAndEndTimes,
+        input.wordsPerCaption,
+        input.fontSize,
+        input.fontColor,
+        input.font,
+        input.backgroundColor,
+        input.showBackground,
+        input.textBorderColor,
+        input.textBorderSize,
+        input.showBorder,
+      );
+      console.log("Text filters processed:", textFilters);
+
+      const footageUrl = baseFootageToUrl[input.baseFootage];
+      const videoLength = characterStartAndEndTimes.reduce(
+        (acc, { endTime }) => Math.max(acc, endTime),
+        0,
+      );
+      const video = await generateVideo(
+        audioBase64,
+        textFilters,
+        footageUrl,
+        videoLength,
+        fontToFontUrl[input.font],
+      );
+      if (video.error) {
+        throw new Error(video.error);
+      }
+
+      await ctx.db
+        .update(videos)
+        .set({ step: 3 })
+        .where(eq(videos.id, videoId))
+        .catch((error) => {
+          console.error(error);
+        });
+
+      return {
+        videoUrl: video.videoUrl,
+      };
     }),
 });
