@@ -1,0 +1,132 @@
+const functions = require('@google-cloud/functions-framework');
+const ffmpeg = require('fluent-ffmpeg');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios')
+// const {v4} = require('uuid')
+// const { Storage } = require('@google-cloud/storage');
+
+const TEMP_DIR = path.resolve('/tmp');
+
+// Ensure the directory exists
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR);
+}
+
+// const GC_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDPmo7Am20+fS3W\n6o9mbS0K7cQan9Ih4fe0hkFMg3L/0jBLKqqOwS1sdHQxhHYUskIgc+ZCeIZKzbsH\nTNH9lARhifwvzYpJlIN0c5jwDVohQSYP8BxIdQpCoYrxXxW5Bch+1myVg4BiuSlz\ndZcKucxke5BhoYhCxsTqTYikWT88ye0I4fGwxKxVUVf/kL5Bar4OJ5bhacYjJHoO\nhwKjyt9xueGMTa+j7iTLUHDaaZfI4Hs2bntM9MxX6EKG1B98V1lr2PQNopZHFg/m\n3YnXIhY5EX4xGuYXCO57T64ejm972xhNPefVzW+xsnmIcz7hVwBDl2ZPQXsjlEgf\n7Ooavo3rAgMBAAECggEAQNUZIJBJYPrxvky5JLkSmHehRtlDY75wP2mv6cehOb/3\nwfmckwFEALsrcC1YPOVgXkcjkP2XnrO55TE54PGBHr7bSUhsl8bv+IWDLPBWhc0V\nKGQJSR1361AMlo1luMbUErw+48BR70K47aw606gravPlpn+uEICHjU5STlTquT4b\nnWBZQWh47n/NTFMz9VULAWqSOlBcaHR+UI/ovAkV6M60hHF2JrzyWxw+6ZPPvvbi\ntEw1GOFKmyYx7DYVdOpx4xOyQ8k2zEVl2812mWxxuZg1w79G1YkyZ5hGWWzQOZcN\n7EMTvwbl+u9rIriFMqvIl3Hzl8nxNb0dLtteOt5sMQKBgQD8ItZM8UwYI9MLJR9t\nE1TmWotjtY7WsydDeUFtBpfjt8IxCAK0KODU6q2Ih7U7kktId+yDvVS5HiyRKBnw\n6bhgCHhwxxs9UXp5SK5iBo+w4fJb/kBIB9b+ocs1JLAUtVWfGQuS3VmwD2+qYLIZ\ngfzsS+xdp//1HXCc9R7JTgyI2wKBgQDSyQOpYQfpsZzF2A213V0EO0E+j761KfG1\nYOQHZvpowYIyDOB/m+jxcIR2UAf+F2q31fsCuTqm9HPWnU/sGpsJWs0y7DnGzP21\nKRjEWb/OIK4nlX/ufvfmPvaeBEeXQQlBABmKXFQj4IJwENzIskzvTyZ1XAfqtPNU\n3FWFxPnUMQKBgQCEBoXqoktzNIcVBepPxlilinIE0xQpjoQXy82blmFAh39zBzvL\nNMCOHRijLlSTDgbHuqwpS6GqkYdKtxHmWawG9UiD3W6BDEIycgGGKONi/t1WmGr2\njMxiZzwt5rkhDtb3yTiLPcbx7xNMxvdbbfqPjS4G2KqpojHOrnfhdzIPEwKBgAoq\nqeOMi44pA+/C+P5Rm//tP7tdwYwJZuAhuT3mKKPO2ZHCbz2Ybober3TpbUlDJeGS\nD5ZVCtAssD2kvssbiWjNGWKgZDUDhCUtw0UNMyQlDWFZY59EPn67gLekazOPbnvV\nHmY/B8vnM0NmfM+tUeqk/azhcHxQl//61KEsHASxAoGALamW3zE5Rr3TnoF0AOxA\ndSwchuAcYsG1hU+FEHpxSyA7oC+bq3f69BxHa39ocKt/7CLR5bfHBIkeGqHXcgHP\nAhfFM70fK0y/C7yEgfamMNzX/bHWeMTGhE05ezFbF3849cQ7OZpeRw2MXZ7cUY08\nzPJT/ftDmtHB5AQt+bShyZ0=\n-----END PRIVATE KEY-----\n"
+// const GC_EMAIL="vidgen-user@regal-hybrid-435215-s1.iam.gserviceaccount.com"
+// const GC_PROJECT_ID="regal-hybrid-435215-s1"
+// const GC_VIDEO_BUCKET_NAME = "vidgen-videos"
+
+// const storage = new Storage({
+//   projectId: GC_PROJECT_ID,
+//   credentials: {
+//     client_email: GC_EMAIL,
+//     private_key: GC_PRIVATE_KEY.split(String.raw`\n`).join('\n'),
+//   }
+// });
+
+// async function uploadFileToGCS(filePath, fileName) {
+//   // Create a reference to the file in the bucket
+//   const file = storage.bucket(GC_VIDEO_BUCKET_NAME).file(fileName);
+
+//   // Read the file content
+//   const fileContent = fs.readFileSync(filePath);
+
+//   fs.unlinkSync(finalOutputPath);
+
+//   // Upload the file
+//   await file.save(fileContent, {
+//     contentType: 'video/mp4', // Adjust contentType as needed
+//   });
+// }
+
+async function downloadFont(fontUrl) {
+  const fontName = fontUrl.split("/").pop() ?? "fontName.ttf"; // Font name
+  const fontPath = path.join(TEMP_DIR, fontName); // Path to save the font
+
+  const response = await axios({
+    url: fontUrl,
+    method: 'GET',
+    responseType: 'arraybuffer' // Ensure response is treated as binary
+  });
+
+  if (response.status !== 200) {
+    throw new Error(`Failed to download font: ${response.statusText}`);
+  }
+
+  // Save the font to the temporary directory
+  fs.writeFileSync(fontPath, Buffer.from(response.data));
+}
+
+functions.http('generateVideo', async (req, res) => {
+  try {
+    const { audioBase64, textFilters, footageUrl, videoLength, fontUrl } = req.body;
+    
+    // Validate inputs
+    if (!audioBase64 || !textFilters || !footageUrl || !videoLength || !fontUrl) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    await downloadFont(fontUrl)
+
+    const audioBuffer = Buffer.from(audioBase64, 'base64');
+    const audioPath = path.join(TEMP_DIR, 'audio.mp3');
+    fs.writeFileSync(audioPath, audioBuffer);
+    const outputPath = path.join(TEMP_DIR, 'output.mp4');
+    const finalOutputPath = path.join(TEMP_DIR, 'final_output.mp4');
+
+    ffmpeg.ffprobe(footageUrl, (err, metadata) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      const videoDuration = metadata.format.duration;
+      if (!videoDuration) {
+        return res.status(500).json({ error: 'Video duration not found' });
+      }
+      const maxStartTime = videoDuration - videoLength;
+      const startTime = Math.random() * maxStartTime;
+
+      ffmpeg(footageUrl)
+        .setStartTime(startTime)
+        .setDuration(videoLength)
+        .videoFilters(`crop=ih*9/16:ih,${textFilters.join(',')}`)
+        .outputOptions('-an')
+        .output(outputPath)
+        .on('end', () => {
+          ffmpeg(outputPath)
+            .addInput(audioPath)
+            .outputOptions('-c:v copy')
+            .output(finalOutputPath)
+            .on('end', () => {
+              try {
+                fs.unlinkSync(audioPath);
+                fs.unlinkSync(outputPath);
+
+                const videoBuffer = fs.readFileSync(finalOutputPath);
+                const base64Video = videoBuffer.toString('base64');
+                const videoUrl = `data:video/mp4;base64,${base64Video}`;
+
+                fs.unlinkSync(finalOutputPath);
+
+                res.status(200).json({ error: null, videoUrl });
+              } catch (error) {
+                res.status(500).json({ error: error.message });
+              }
+            })
+            .on('error', (err) => {
+              fs.unlinkSync(audioPath);
+              res.status(500).json({ error: err.message });
+            })
+            .run();
+        })
+        .on('error', (err) => {
+          fs.unlinkSync(audioPath);
+          res.status(500).json({ error: err.message });
+        })
+        .run();
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
