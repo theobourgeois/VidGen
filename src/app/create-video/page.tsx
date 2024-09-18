@@ -123,6 +123,8 @@ export default function VideoCreator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const { mutate: completeVideoGeneration } =
     api.video.completeVideoGeneration.useMutation({
       onError: (err) => {
@@ -130,7 +132,6 @@ export default function VideoCreator() {
       },
       onSuccess: () => {
         refetchVideoData();
-        refetchVideoUrl();
       },
     });
 
@@ -140,14 +141,14 @@ export default function VideoCreator() {
       refetchVideoData()
         .then(() => {
           setIsGenerating(false);
-          refetchVideoUrl();
           completeVideoGeneration();
         })
         .catch((err) => {
           console.error(err);
         });
     },
-    onSuccess: () => {
+    onSuccess: (video) => {
+      setVideoUrl(video.videoUrl);
       setError(null);
     },
     onError: (err) => {
@@ -169,9 +170,6 @@ export default function VideoCreator() {
     api.video.getLatestVideoProgress.useQuery(undefined, {
       refetchInterval: isGenerating ? 500 : undefined,
     });
-
-  const { data: videoUrl, refetch: refetchVideoUrl } =
-    api.video.getLatestVideo.useQuery();
 
   useEffect(() => {
     const formValues = localStorage.getItem("video-creator-form-values");
