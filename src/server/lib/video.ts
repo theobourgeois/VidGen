@@ -1,42 +1,41 @@
 /* eslint-disable */
 import { env } from "~/env";
 import fs from "fs";
-import ffmpeg from "fluent-ffmpeg";
 import path from "path";
 import { Font } from "~/app/create-video/page";
 import CryptoJS from "crypto-js";
 import { execSync } from "child_process";
 import { v4 as uuidv4 } from "uuid";
-import { Storage } from '@google-cloud/storage';
+// import { Storage } from '@google-cloud/storage';
 
 export const GC_VIDEO_BUCKET_NAME = "vidgen-videos"
 
-const storage = new Storage({
-  projectId: env.GC_PROJECT_ID,
-  credentials: {
-    client_email: env.GC_EMAIL,
-    private_key: env.GC_PRIVATE_KEY.split(String.raw`\n`).join('\n'),
-  }
-});
+// const storage = new Storage({
+//   projectId: env.GC_PROJECT_ID,
+//   credentials: {
+//     client_email: env.GC_EMAIL,
+//     private_key: env.GC_PRIVATE_KEY.split(String.raw`\n`).join('\n'),
+//   }
+// });
 
-export async function uploadFileToGCS(base64Data: string, fileName: string) {
-  const base64Content = base64Data.split(',')[1]; // This removes the data URI prefix
-  if (!base64Content) {
-    throw new Error('Base64 content not found');
-  }
-  const buffer = Buffer.from(base64Content, 'base64');
+// export async function uploadFileToGCS(base64Data: string, fileName: string) {
+//   const base64Content = base64Data.split(',')[1]; // This removes the data URI prefix
+//   if (!base64Content) {
+//     throw new Error('Base64 content not found');
+//   }
+//   const buffer = Buffer.from(base64Content, 'base64');
 
-  console.log('Buffer created. Size:', buffer.length);
+//   console.log('Buffer created. Size:', buffer.length);
 
-  // Create a reference to the file in the bucket
-  const file = storage.bucket(GC_VIDEO_BUCKET_NAME).file(fileName);
+//   // Create a reference to the file in the bucket
+//   const file = storage.bucket(GC_VIDEO_BUCKET_NAME).file(fileName);
 
-  // Upload the buffer
-  await file.save(buffer, {
-    contentType: 'video/mp4', // Adjust contentType as needed
-  });
+//   // Upload the buffer
+//   await file.save(buffer, {
+//     contentType: 'video/mp4', // Adjust contentType as needed
+//   });
 
-}
+// }
 
 function getWordWidth(word: string, font: string, fontSize: number) {
   // Create a temporary file to store the output
@@ -226,7 +225,7 @@ export async function getFfmpegVideoTextFilters(
     let currentLineWidth = 0;
 
     for (const wordInfo of selectedWords) {
-      const wordWidth = (fontSize * fontToSizeMultiplier[font] ?? 1) * wordInfo.word.length
+      const wordWidth = getWordWidth(wordInfo.word, fontFilePath, fontSize);
 
       if (currentLineWidth + wordWidth > SCREEN_WIDTH - SCREEN_PADDING) {
         if (currentLine.length > 0) {
@@ -284,129 +283,145 @@ if (!fs.existsSync(TEMP_DIR)) {
   fs.mkdirSync(TEMP_DIR);
 }
 
-export async function generateVideoCloudFn(
-  audioBase64: string,
-  textFilters: string[],
-  baseFootageUrl: string,
-  videoLength: number,
-  fontUrl: string,
-) {
-  const response = await fetch('https://generate-vid-787151393927.us-central1.run.app', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      audioBase64, textFilters, footageUrl: baseFootageUrl, videoLength, fontUrl
-    }),
-  });
+// export async function generateVideoCloudFn(
+//   audioBase64: string,
+//   textFilters: string[],
+//   baseFootageUrl: string,
+//   videoLength: number,
+//   fontUrl: string,
+// ) {
+//   const response = await fetch('https://generate-vid-787151393927.us-central1.run.app', {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify({
+//       audioBase64, textFilters, footageUrl: baseFootageUrl, videoLength, fontUrl
+//     }),
+//   });
 
-  const result = await response.json();
-  if (result.error) {
-    return {
-      error: (result.error ?? "") as string,
-      videoUrl: null,
-    }
-  } else {
-    return {
-      error: null,
-      videoUrl: (result.videoUrl ?? "") as string,
-    }
-  }
-}
+//   const result = await response.json();
+//   if (result.error) {
+//     return {
+//       error: (result.error ?? "") as string,
+//       videoUrl: null,
+//     }
+//   } else {
+//     return {
+//       error: null,
+//       videoUrl: (result.videoUrl ?? "") as string,
+//     }
+//   }
+// }
 
-export async function generateVideo(
-  audioBase64: string,
-  textFilters: string[],
-  baseFootageUrl: string,
-  videoLength: number,
-  onProgress: (progress: number) => Promise<void>,
-): Promise<{ error: string | null; videoUrl: string | null }> {
-  return new Promise((resolve) => {
-    const audioBuffer = Buffer.from(audioBase64, "base64");
-    const audioPath = path.join(TEMP_DIR, "audio.mp3");
-    fs.writeFileSync(audioPath, audioBuffer);
-    const outputPath = path.join(TEMP_DIR, "output.mp4");
-    const finalOutputPath = path.join(TEMP_DIR, "final_output.mp4");
+// async function downloadFont(fontUrl: string) {
+//   const fontName = fontUrl.split("/").pop() ?? "fontName.ttf"; // Font name
+//   const fontPath = path.join(TEMP_DIR, fontName); // Path to save the font
 
-    ffmpeg.ffprobe(baseFootageUrl, (err, metadata) => {
-      if (err) {
-        resolve({ error: (err as any).message, videoUrl: null });
-        return;
-      }
-      const videoDuration = metadata.format.duration;
-      if (!videoDuration) {
-        resolve({ error: "Video duration not found", videoUrl: null });
-        return;
-      }
-      const maxStartTime = videoDuration - videoLength;
-      const startTime = Math.random() * maxStartTime;
-      ffmpeg(baseFootageUrl)
-        .setStartTime(startTime)
-        .setDuration(videoLength)
-        .videoFilters(`crop=ih*9/16:ih,${textFilters.join(",")}`)
-        .outputOptions("-an")
-        .output(outputPath)
-        .on("end", () => {
-          ffmpeg(outputPath)
-            .addInput(audioPath)
-            .outputOptions("-c:v copy")
-            .output(finalOutputPath)
-            .on("end", async () => {
-              try {
-                fs.unlink(audioPath, (err) => {
-                  if (err) {
-                    console.error(err);
-                  }
-                });
-                fs.unlink(outputPath, (err) => {
-                  if (err) {
-                    console.error(err);
-                  }
-                });
+//   const response = await axios({
+//     url: fontUrl,
+//     method: 'GET',
+//     responseType: 'arraybuffer' // Ensure response is treated as binary
+//   });
 
-                // Read the final video file and convert to base64
-                const videoBuffer = fs.readFileSync(finalOutputPath);
-                const base64Video = videoBuffer.toString("base64");
-                const videoUrl = `data:video/mp4;base64,${base64Video}`;
+//   if (response.status !== 200) {
+//     throw new Error(`Failed to download font: ${response.statusText}`);
+//   }
 
-                fs.unlink(finalOutputPath, (err) => {
-                  if (err) {
-                    console.error(err);
-                  }
-                });
+//   // Save the font to the temporary directory
+//   fs.writeFileSync(fontPath, Buffer.from(response.data));
+// }
 
-                resolve({ error: null, videoUrl });
-              } catch (error) {
-                resolve({
-                  error: (error as any).message,
-                  videoUrl: null,
-                });
-              }
-            })
-            .on("error", async (err) => {
-              fs.unlink(audioPath, (err) => {
-                if (err) {
-                  console.error(err);
-                }
-              });
-              resolve({ error: err.message, videoUrl: null });
-            })
-            .run();
-        })
-        .on("error", async (err) => {
-          fs.unlink(audioPath, (err) => {
-            if (err) {
-              console.error(err);
-            }
-          });
-          resolve({ error: err.message, videoUrl: null });
-        })
-        .on("progress", async (progress) => {
-          await onProgress(progress.percent ?? 0);
-        })
-        .run();
-    });
-  });
-}
+// export async function generateVideo(
+//   audioBase64: string,
+//   textFilters: string[],
+//   baseFootageUrl: string,
+//   videoLength: number,
+//   fontUrl: string,
+// ): Promise<{ error: string | null; videoUrl: string | null }> {
+//   await downloadFont(fontUrl);
+//   return new Promise((resolve) => {
+//     const audioBuffer = Buffer.from(audioBase64, "base64");
+//     const audioPath = path.join(TEMP_DIR, "audio.mp3");
+//     fs.writeFileSync(audioPath, audioBuffer);
+//     const outputPath = path.join(TEMP_DIR, "output.mp4");
+//     const finalOutputPath = path.join(TEMP_DIR, "final_output.mp4");
+
+//     ffmpeg.ffprobe(baseFootageUrl, (err, metadata) => {
+//       if (err) {
+//         resolve({ error: (err as any).message, videoUrl: null });
+//         return;
+//       }
+//       const videoDuration = metadata.format.duration;
+//       if (!videoDuration) {
+//         resolve({ error: "Video duration not found", videoUrl: null });
+//         return;
+//       }
+//       const maxStartTime = videoDuration - videoLength;
+//       const startTime = Math.random() * maxStartTime;
+//       ffmpeg(baseFootageUrl)
+//         .setStartTime(startTime)
+//         .setDuration(videoLength)
+//         .videoFilters(`crop=ih*9/16:ih,${textFilters.join(",")}`)
+//         .outputOptions("-an")
+//         .output(outputPath)
+//         .on("end", () => {
+//           ffmpeg(outputPath)
+//             .addInput(audioPath)
+//             .outputOptions("-c:v copy")
+//             .output(finalOutputPath)
+//             .on("end", async () => {
+//               try {
+//                 fs.unlink(audioPath, (err) => {
+//                   if (err) {
+//                     console.error(err);
+//                   }
+//                 });
+//                 fs.unlink(outputPath, (err) => {
+//                   if (err) {
+//                     console.error(err);
+//                   }
+//                 });
+
+//                 // Read the final video file and convert to base64
+//                 const videoBuffer = fs.readFileSync(finalOutputPath);
+//                 const base64Video = videoBuffer.toString("base64");
+//                 const videoUrl = `data:video/mp4;base64,${base64Video}`;
+
+//                 fs.unlink(finalOutputPath, (err) => {
+//                   if (err) {
+//                     console.error(err);
+//                   }
+//                 });
+
+//                 resolve({ error: null, videoUrl });
+//               } catch (error) {
+//                 resolve({
+//                   error: (error as any).message,
+//                   videoUrl: null,
+//                 });
+//               }
+//             })
+//             .on("error", async (err) => {
+//               fs.unlink(audioPath, (err) => {
+//                 if (err) {
+//                   console.error(err);
+//                 }
+//               });
+//               resolve({ error: err.message, videoUrl: null });
+//             })
+//             .run();
+//         })
+//         .on("error", async (err) => {
+//           fs.unlink(audioPath, (err) => {
+//             if (err) {
+//               console.error(err);
+//             }
+//           });
+//           resolve({ error: err.message, videoUrl: null });
+//         })
+//         .run();
+//     });
+//   });
+// }
 
