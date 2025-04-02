@@ -52,7 +52,6 @@ function getWordWidth(word: string, font: string, fontSize: number) {
 
     // Read the output from the temporary file
     const output = fs.readFileSync(tempFile, "utf-8");
-    console.log("FFmpeg output:", output);
 
     // Parse the width from the output
     const width = parseFloat(output.trim());
@@ -100,12 +99,11 @@ const SCREEN_PADDING = 80;
 const ELEVEN_LABS_TEXT_TO_SPEECH_API_URL =
   "https://api.elevenlabs.io/v1/text-to-speech/";
 
-export const fontToFontUrl: {
-  [key in Font]: string;
-} = {
-  helvetica: "https://storage.googleapis.com/vidgen-footage/Helvetica-Bold.ttf",
-  arial: "https://storage.googleapis.com/vidgen-footage/ArialCEMTBlack.ttf",
+export const fontToFontUrl = {
+  helvetica: "https://fonts.cdnfonts.com/s/14028/Helvetica.woff",
+  arial: "https://fonts.cdnfonts.com/s/29105/ARIAL.woff",
 };
+
 
 const fontToSizeMultiplier: {
   [key in Font]: number;
@@ -278,7 +276,7 @@ export async function getFfmpegVideoTextFilters(
   return textFilters;
 }
 
-const TEMP_DIR = path.resolve("/tmp"); // Use /tmp, as it's commonly writable in serverless environments
+const TEMP_DIR = path.resolve("/tmp");
 
 // Ensure the directory exists
 if (!fs.existsSync(TEMP_DIR)) {
@@ -317,20 +315,19 @@ if (!fs.existsSync(TEMP_DIR)) {
 // }
 
 async function downloadFont(fontUrl: string) {
-  const fontName = fontUrl.split("/").pop() ?? "fontName.ttf"; // Font name
-  const fontPath = path.join(TEMP_DIR, fontName); // Path to save the font
+  const fontName = fontUrl.split("/").pop() ?? "fontName.ttf";
+  const fontPath = path.join(TEMP_DIR, fontName);
 
   const response = await axios({
     url: fontUrl,
     method: 'GET',
-    responseType: 'arraybuffer' // Ensure response is treated as binary
+    responseType: 'arraybuffer'
   });
 
   if (response.status !== 200) {
     throw new Error(`Failed to download font: ${response.statusText}`);
   }
 
-  // Save the font to the temporary directory
   fs.writeFileSync(fontPath, Buffer.from(response.data));
 }
 
@@ -341,7 +338,9 @@ export async function generateVideo(
   videoLength: number,
   fontUrl: string,
 ): Promise<{ error: string | null; videoUrl: string | null }> {
+  console.log("DOWNLOADING FONT", fontUrl);
   await downloadFont(fontUrl);
+  console.log("DOWNLOADED FONT");
   return new Promise((resolve) => {
     const audioBuffer = Buffer.from(audioBase64, "base64");
     const audioPath = path.join(TEMP_DIR, "audio.mp3");
